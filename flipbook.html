@@ -1,0 +1,125 @@
+<style>
+    .flipbook-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin: 20px 0;
+        overflow: hidden;
+    }
+
+    .custom-flip-book {
+        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.3);
+        display: none; /* Hidden until loaded */
+    }
+
+    .custom-page {
+        background-color: white;
+        overflow: hidden;
+    }
+
+    #flipbook-loading {
+        font-family: sans-serif;
+        font-size: 1.2rem;
+        color: #666;
+        text-align: center;
+        padding: 50px 0;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
+
+<div class="flipbook-wrapper">
+    <div id="flipbook-loading">Loading Lookbook...</div>
+    <div class="custom-flip-book" id="custom-flipbook"></div>
+</div>
+
+<script>
+    // Wrap in an IIFE to prevent clashing with Squarespace scripts
+    (function() {
+        // ==========================================
+        // 🛠️ FLIPBOOK CONFIGURATION SETTINGS 🛠️
+        // Change these values to adjust your book
+        // ==========================================
+        
+        // 1. Your Squarespace PDF Link
+        const PDF_URL = 'https://raw.githubusercontent.com/teostoleru/eve/main/GARDEN%20OF%20EVE%20LOOKBOOK%20compressed%201-compressed.pdf';
+        
+        // 2. Base dimensions of a single page (Standard portrait: 400x600)
+        const PAGE_WIDTH = 400;  
+        const PAGE_HEIGHT = 600; 
+        
+        // 3. Size mode: "fixed" (keeps exact pixel size) or "stretch" (fills container)
+        const SIZE_MODE = "fixed"; 
+        
+        // ==========================================
+        // END OF CONFIGURATION
+        // ==========================================
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        const flipbookElement = document.getElementById('custom-flipbook');
+        const loadingElement = document.getElementById('flipbook-loading');
+
+        async function initFlipbook() {
+            try {
+                const loadingTask = pdfjsLib.getDocument(PDF_URL);
+                const pdf = await loadingTask.promise;
+                const numPages = pdf.numPages;
+                const renderPromises = [];
+
+                for (let i = 1; i <= numPages; i++) {
+                    renderPromises.push(renderPage(pdf, i));
+                }
+
+                await Promise.all(renderPromises);
+
+                loadingElement.style.display = 'none';
+                flipbookElement.style.display = 'block';
+
+                const pageFlip = new St.PageFlip(flipbookElement, {
+                    width: PAGE_WIDTH,
+                    height: PAGE_HEIGHT,
+                    size: SIZE_MODE,
+                    minWidth: 300,
+                    maxWidth: 500,
+                    minHeight: 400,
+                    maxHeight: 700,
+                    maxShadowOpacity: 0.3,
+                    showCover: true,
+                    mobileScrollSupport: false
+                });
+
+                pageFlip.loadFromHTML(flipbookElement.querySelectorAll('.custom-page'));
+
+            } catch (error) {
+                console.error("Error loading PDF: ", error);
+                loadingElement.innerText = "Error loading Lookbook. Please try refreshing the page.";
+            }
+        }
+
+        async function renderPage(pdf, pageNumber) {
+            const page = await pdf.getPage(pageNumber);
+            const viewport = page.getViewport({ scale: 1 });
+            const scale = PAGE_WIDTH / viewport.width;
+            const scaledViewport = page.getViewport({ scale: scale });
+
+            const pageDiv = document.createElement('div');
+            pageDiv.className = 'custom-page';
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = scaledViewport.width;
+            canvas.height = scaledViewport.height;
+
+            await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
+
+            pageDiv.appendChild(canvas);
+            flipbookElement.appendChild(pageDiv);
+        }
+
+        // Run the script
+        initFlipbook();
+    })();
+</script>
