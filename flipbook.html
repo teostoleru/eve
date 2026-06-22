@@ -50,7 +50,7 @@
 
 <script>
     (function() {
-        const PDF_URL = 'https://raw.githubusercontent.com/teostoleru/eve/main/2025.04%20London%20Marathon.pdf';
+        const PDF_URL = 'https://raw.githubusercontent.com/teostoleru/eve/main/FULL%20BOOK%20GARDEN%20OF%20EVE%20smallest%20new.pdf';
 
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
@@ -65,7 +65,9 @@
                 const numPages = pdf.numPages;
 
                 const firstPage = await pdf.getPage(1);
-                const renderScale = 1.5; 
+                const isMobile = window.innerWidth <= 768;
+                const renderScale = isMobile ? 1.0 : 1.5; 
+                
                 const viewport = firstPage.getViewport({ scale: renderScale });
                 const pdfWidth = viewport.width;
                 const pdfHeight = viewport.height;
